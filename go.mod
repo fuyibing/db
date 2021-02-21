@@ -2,10 +2,9 @@ module github.com/fuyibing/db
 
 go 1.14
 
-// v0.0.0-20210213143827-392b7eb90d13
 require (
 	github.com/CloudyKit/jet/v3 v3.0.1 // indirect
-	github.com/fuyibing/log v0.0.0-20210213143827-392b7eb90d13
+	github.com/fuyibing/log v1.0.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gomodule/redigo v1.8.3 // indirect
 	github.com/iris-contrib/jade v1.1.4 // indirect
