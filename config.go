@@ -47,7 +47,7 @@ func (o *configuration) LoadYaml(path string) error {
 
 // init config with default file.
 func (o *configuration) initialize() {
-	for _, path := range []string{"./config/service.yaml", "../config/service.yaml"} {
+	for _, path := range []string{"./tmp/db.yaml", "./config/db.yaml", "../config/db.yaml"} {
 		err := o.LoadYaml(path)
 		if err == nil {
 			break
