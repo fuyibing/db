@@ -78,7 +78,7 @@ func TransactionWithSession(ctx interface{}, sess *xorm.Session, handlers ...Tra
 	// 1. 选择主库.
 	// 仅在未指定连结时生效.
 	if sess == nil {
-		sess = Master()
+		sess = MasterContext(ctx)
 	}
 	// 2. 开始事务.
 	if err = sess.Begin(); err != nil {
