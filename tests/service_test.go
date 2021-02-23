@@ -7,16 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fuyibing/log"
+	"github.com/fuyibing/log/v2"
 	"xorm.io/xorm"
 
 	"github.com/fuyibing/db"
 )
 
 func init() {
-	log.Config.TimeFormat = "15:04:05.999999"
-	log.Logger.SetAdapter(log.AdapterTerm)
-	log.Logger.SetLevel(log.LevelDebug)
+	// log.Config.TimeFormat = "15:04:05.999999"
+	// log.Logger.SetAdapter(log.AdapterTerm)
+	// log.Logger.SetLevel(log.LevelDebug)
 }
 
 func TestService(t *testing.T) {
