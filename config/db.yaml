@@ -1,10 +1,18 @@
 #
-# Configuration for service.
+# package: github.com/fuyibing/db.
+# template: db
+#
+# [driver]
+# [dsn]
+# [max-idle]
+# [max-open]
+# [max-lifetime]
+# [mapper]
 #
 driver: "mysql"
 dsn:
-  - "root:pass@tcp(127.0.0.1:3306)/cn_uniondrug_module_mbs?charset=utf8"
+  - "root:pass@tcp(127.0.0.1:3306)/test?charset=utf8"
 max-idle: 3
-max-open: 300
+max-open: 60
 max-lifetime: 60
 mapper: "same"
