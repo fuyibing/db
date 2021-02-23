@@ -1,0 +1,4 @@
+# for log
+adapter: term
+level: debug
+time: 15:04:05

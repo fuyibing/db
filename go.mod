@@ -5,8 +5,8 @@ go 1.14
 require (
 	github.com/CloudyKit/jet/v3 v3.0.1 // indirect
 	github.com/fuyibing/log v1.0.0
+	github.com/fuyibing/log/v2 v2.0.2
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gomodule/redigo v1.8.3 // indirect
 	github.com/iris-contrib/jade v1.1.4 // indirect
 	github.com/iris-contrib/schema v0.0.6 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect

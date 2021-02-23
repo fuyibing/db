@@ -6,7 +6,7 @@ package db
 import (
 	"sync"
 
-	"github.com/fuyibing/log"
+	"github.com/fuyibing/log/v2"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 
 func init() {
 	new(sync.Once).Do(func() {
-		log.Info("initialize golang framework service.")
+		log.Debug("初始化: github.com/fuyibing/db 包.")
 		Config = new(configuration)
 		Config.initialize()
 	})
