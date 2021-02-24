@@ -1,4 +1,4 @@
-# for log
+# config from github.com/fuyibing/db
 adapter: term
 level: debug
 time: 15:04:05
