@@ -14,10 +14,10 @@ import (
 	"xorm.io/xorm"
 )
 
-// 事务回调.
+// Transaction handler.
 type TransactionHandler func(ctx interface{}, sess *xorm.Session) error
 
-// 绑定Context.
+// Bind context.
 func Context(sess *xorm.Session, x interface{}) {
 	// return if nil.
 	if x == nil {
@@ -38,19 +38,19 @@ func Context(sess *xorm.Session, x interface{}) {
 	}
 }
 
-// 读取主库连结.
+// Return master connection.
 func Master() *xorm.Session {
 	return Config.engines.Master().NewSession()
 }
 
-// 读取主库连结, 并绑定Context.
+// Return master connection and bind context.
 func MasterContext(ctx interface{}) *xorm.Session {
 	sess := Master()
 	Context(sess, ctx)
 	return sess
 }
 
-// 读取从库连结.
+// Return slave connection.
 func Slave() *xorm.Session {
 	if Config.slaveEnable {
 		return Config.engines.Slave().NewSession()
@@ -58,51 +58,47 @@ func Slave() *xorm.Session {
 	return Master()
 }
 
-// 读取从库连结, 并绑定Context.
+// Return slave connection and bind context.
 func SlaveContext(ctx interface{}) *xorm.Session {
 	sess := Slave()
 	Context(sess, ctx)
 	return sess
 }
 
-// 执行事务.
+// Run transaction.
 func Transaction(ctx interface{}, handlers ...TransactionHandler) (err error) {
 	return TransactionWithSession(ctx, nil, handlers...)
 }
 
-// 执行事务.
+// Run transaction.
 //
-// 在执行事务过程中, 所有操作都在同一个主协程序中串行处理, 当任意一个回调返回error时, 将
-// 触发Rollback回滚.
+// Rollback when error return by handler, all handler executed with liner.
 func TransactionWithSession(ctx interface{}, sess *xorm.Session, handlers ...TransactionHandler) (err error) {
-	// 1. 选择主库.
-	// 仅在未指定连结时生效.
+	// 1. Select master connection if session not specified.
 	if sess == nil {
 		sess = MasterContext(ctx)
 	}
-	// 2. 开始事务.
+	// 2. Begin transaction.
 	if err = sess.Begin(); err != nil {
 		return
 	}
-	// 3. 捕获Panic.
-	// 当脚本在运行过程中, 有可能产生运行Panic, 此处理捕获panic并
-	// 触发回滚.
+	// 3. Defer operation.
 	defer func() {
-		// 3.1 捕获Panic.
+		// 3.1 Catch panic.
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("%v", r))
 			log.Errorfc(ctx, "[SQL] transaction panic: %s.", err.Error())
 		}
-		// 3.2 结束事务.
+		// 3.2 End transaction.
 		if err != nil {
-			// 3.2.1 回滚.
+			// 3.2.1 rollback.
 			_ = sess.Rollback()
 		} else {
-			// 3.2.2 提交.
+			// 3.2.2 commit.
 			_ = sess.Commit()
 		}
 	}()
-	// 4. 串行执行回调.
+	// 4. call handler by liner.
 	for _, handler := range handlers {
 		if err = handler(ctx, sess); err != nil {
 			break

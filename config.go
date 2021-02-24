@@ -39,7 +39,7 @@ func (o *configuration) LoadYaml(path string) error {
 		return err
 	}
 
-	log.Debugf("配置源: %s.", path)
+	log.Debugf("parse configuration from %s.", path)
 	o.parse()
 	return nil
 }
@@ -60,7 +60,7 @@ func (o *configuration) parse() {
 		panic(err)
 	}
 
-	log.Debugf("数据源: %d个, 最大连结数: %d个, 表映射: %s.", len(o.Dsn), o.MaxOpen, o.Mapper)
+	log.Debugf("config %d dsn, max idle is %d, max open is %d, mapper is %s.", len(o.Dsn), o.MaxIdle, o.MaxOpen, o.Mapper)
 
 	o.engines.SetConnMaxLifetime(time.Duration(o.MaxLifetime) * time.Second)
 	o.engines.SetMaxIdleConns(o.MaxIdle)

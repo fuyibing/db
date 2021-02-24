@@ -15,7 +15,7 @@ var (
 
 func init() {
 	new(sync.Once).Do(func() {
-		log.Debug("初始化: github.com/fuyibing/db 包.")
+		log.Debug("init db package.")
 		Config = new(configuration)
 		Config.initialize()
 	})
