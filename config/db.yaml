@@ -12,7 +12,7 @@
 driver: "mysql"
 dsn:
   - "root:pass@tcp(127.0.0.1:3306)/test?charset=utf8"
-max-idle: 3
-max-open: 60
+max-idle: 16
+max-open: 128
 max-lifetime: 60
 mapper: "same"
