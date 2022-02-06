@@ -7,10 +7,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
+	"unsafe"
 
 	"github.com/fuyibing/log/v2"
 	"github.com/fuyibing/log/v2/interfaces"
 	"github.com/kataras/iris/v12"
+	"github.com/teivah/onecontext"
 	"xorm.io/xorm"
 )
 
@@ -19,20 +22,37 @@ type TransactionHandler func(ctx interface{}, sess *xorm.Session) error
 
 // Bind context.
 func Context(sess *xorm.Session, x interface{}) {
-	// return if nil.
+	// 1 get xorm session ctx
+	v := reflect.ValueOf(sess).Elem()
+	sessCtxRf := getUnexportedField(v.FieldByName("ctx"))
+	sessCtx := sessCtxRf.(context.Context)
+
+	// 2.1 return if nil.
 	if x == nil {
-		sess.Context(log.NewContext())
+		// base tracing ctx
+		baseTracingCtx := log.NewContext()
+
+		// merge tracing ctx wih xorm session ctx
+		sessCtx, _ = onecontext.Merge(sessCtx, baseTracingCtx)
+		sess.Context(sessCtx)
 		return
 	}
-	// context.Context.
+	// 2.2 context.Context.
 	if c, ok := x.(context.Context); ok && c != nil {
-		sess.Context(c)
+		// merge context.Context wih xorm session ctx
+		sessCtx, _ = onecontext.Merge(sessCtx, c)
+		sess.Context(sessCtx)
 		return
 	}
-	// iris.Context.
+	// 2.3 iris.Context.
 	if c, ok := x.(iris.Context); ok && c != nil {
 		if g := c.Values().Get(interfaces.OpenTracingKey); g != nil {
-			sess.Context(context.WithValue(context.TODO(), interfaces.OpenTracingKey, g.(interfaces.TraceInterface)))
+			// tracing ctx
+			traceCtx := context.WithValue(context.TODO(), interfaces.OpenTracingKey, g.(interfaces.TraceInterface))
+
+			// merge tracing ctx wih xorm session ctx
+			sessCtx, _ = onecontext.Merge(sessCtx, traceCtx)
+			sess.Context(sessCtx)
 		}
 		return
 	}
@@ -40,7 +60,9 @@ func Context(sess *xorm.Session, x interface{}) {
 
 // Return master connection.
 func Master() *xorm.Session {
-	return Config.engines.Master().NewSession()
+	engine := Config.engines.Master()
+	engine.EnableSessionID(true)
+	return engine.NewSession()
 }
 
 // Return master connection and bind context.
@@ -53,7 +75,9 @@ func MasterContext(ctx interface{}) *xorm.Session {
 // Return slave connection.
 func Slave() *xorm.Session {
 	if Config.slaveEnable {
-		return Config.engines.Slave().NewSession()
+		engine := Config.engines.Slave()
+		engine.EnableSessionID(true)
+		return engine.NewSession()
 	}
 	return Master()
 }
@@ -105,4 +129,10 @@ func TransactionWithSession(ctx interface{}, sess *xorm.Session, handlers ...Tra
 		}
 	}
 	return
+}
+
+// get private unexported field
+func getUnexportedField(field reflect.Value) interface{} {
+	rf := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+	return rf.Interface()
 }

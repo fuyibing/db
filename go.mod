@@ -1,6 +1,6 @@
 module github.com/fuyibing/db
 
-go 1.14
+go 1.17
 
 require (
 	github.com/CloudyKit/jet/v3 v3.0.1 // indirect
@@ -17,6 +17,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/ryanuber/columnize v2.1.2+incompatible // indirect
+	github.com/teivah/onecontext v1.3.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
@@ -24,5 +25,5 @@ require (
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	xorm.io/xorm v1.0.7
+	xorm.io/xorm v1.2.5
 )
