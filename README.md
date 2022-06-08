@@ -18,6 +18,11 @@ databases:
     dsn:
       - "user11:pass11@tcp(host11:port)/name1?charset=utf8"
       - "user11:pass11@tcp(host12:port)/name1?charset=utf8"
+  db2:
+    driver: "mysql"
+    dsn:
+      - "user21:pass21@tcp(host21:port)/name2?charset=utf8"
+      - "user21:pass21@tcp(host22:port)/name2?charset=utf8"
 ```
 
 ### 支持动态实例
