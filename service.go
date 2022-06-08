@@ -1,47 +1,55 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2021-02-13
+// date: 2022-06-07
 
 package db
 
-import (
-	"xorm.io/xorm"
-)
+import "xorm.io/xorm"
 
-// Struct for anonymous in service.
-//
-//   type ExampleService struct{
-//       xdb.Service
-//   }
-//
-//   func NewExampleService(s ...*xorm.Session) *ExampleService {
-//       o := &ExampleService{}
-//       o.Use(s...)
-//       return o
-//   }
-//
+// Service
+// 服务结构体.
 type Service struct {
-	sess *xorm.Session
+    _key  string
+    _sess *xorm.Session
 }
 
-// Read master connection.
+// Master
+// 获取主库连接.
 func (o *Service) Master() *xorm.Session {
-	if o.sess == nil {
-		return Master()
-	}
-	return o.sess
+    // 1. 指定连接.
+    if o._sess != nil {
+        return o._sess
+    }
+
+    // 2. 创建连接.
+    return Manager.GetEngine(o._key).Master().NewSession()
 }
 
-// Return slave connection.
+// Slave
+// 获取从库连接.
 func (o *Service) Slave() *xorm.Session {
-	if o.sess == nil {
-		return Slave()
-	}
-	return o.sess
+    // 1. 指定连接.
+    if o._sess != nil {
+        return o._sess
+    }
+
+    // 2. 创建连接.
+    return Manager.GetEngine(o._key).Slave().NewSession()
 }
 
-// Use specified connection.
+// Use
+// 绑定连接.
 func (o *Service) Use(s ...*xorm.Session) {
-	if s != nil && len(s) > 0 {
-		o.sess = s[0]
-	}
+    if len(s) > 0 {
+        o._sess = s[0]
+    }
+}
+
+// UseKey
+// 绑定连接键名.
+//
+// 键名用于选定连接, 以支持在一个项目中可以连接多个实例.
+func (o *Service) UseKey(key string) {
+    if key != "" {
+        o._key = key
+    }
 }

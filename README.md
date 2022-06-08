@@ -1,4 +1,4 @@
 # DB
 
-> package `github.com/fuyibing/db`.
+> package `github.com/fuyibing/db/v2`.
 

@@ -1,76 +1,108 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2021-02-13
+// date: 2022-06-06
 
 package db
 
 import (
-	"io/ioutil"
-	"time"
+    "os"
+    "sync"
 
-	"github.com/fuyibing/log/v2/plugins"
-	_ "github.com/go-sql-driver/mysql"
-	"gopkg.in/yaml.v3"
-	"xorm.io/xorm"
-	"xorm.io/xorm/names"
-
-	"github.com/fuyibing/log/v2"
+    "gopkg.in/yaml.v3"
 )
 
-// DB配置.
-type configuration struct {
-	Driver      string   `yaml:"driver"`
-	Dsn         []string `yaml:"dsn"`
-	MaxIdle     int      `yaml:"max-idle"`
-	MaxOpen     int      `yaml:"max-open"`
-	MaxLifetime int      `yaml:"max-lifetime"`
-	Mapper      string   `yaml:"mapper"`
-	engines     *xorm.EngineGroup
-	slaveEnable bool
+// Config
+// 配置实例/单例.
+var Config *Configuration
+
+// Configuration
+// 配置结构体.
+type Configuration struct {
+    Databases    map[string]*Database `yaml:"databases"`
+    Mapper       *string              `yaml:"mapper"`
+    MaxIdle      *int                 `yaml:"max-idle"`
+    MaxLifetime  *int                 `yaml:"max-lifetime"`
+    MaxOpen      *int                 `yaml:"max-open"`
+    UseSessionId *bool                `yaml:"use-session-id"`
+
+    mu *sync.RWMutex
 }
 
-// 读取YAML文件.
-func (o *configuration) LoadYaml(path string) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	if err = yaml.Unmarshal(data, o); err != nil {
-		return err
-	}
-
-	log.Debugf("parse configuration from %s.", path)
-	o.parse()
-	return nil
+// GetDatabase
+// 读取Database实例.
+func (o *Configuration) GetDatabase(key string) *Database {
+    o.mu.RLock()
+    defer o.mu.RUnlock()
+    if v, ok := o.Databases[key]; ok {
+        return v
+    }
+    return nil
 }
 
-// 初始化配置.
-func (o *configuration) initialize() {
-	for _, path := range []string{"./tmp/db.yaml", "./config/db.yaml", "../config/db.yaml"} {
-		if o.LoadYaml(path) == nil {
-			break
-		}
-	}
+// Init
+// 配置初始化.
+func (o *Configuration) Init() *Configuration {
+    o.mu = new(sync.RWMutex)
+    o.Databases = make(map[string]*Database)
+
+    o.scan()
+    o.defaults()
+    return o
 }
 
-// 应用配置.
-func (o *configuration) parse() {
-	var err error
-	if o.engines, err = xorm.NewEngineGroup(o.Driver, o.Dsn); err != nil {
-		panic(err)
-	}
+// SetDatabase
+// 设置Database实例.
+func (o *Configuration) SetDatabase(key string, database *Database) {
+    o.mu.Lock()
+    defer o.mu.Unlock()
+    o.Databases[key] = database
+}
 
-	log.Debugf("config %d dsn, max idle is %d, max open is %d, mapper is %s.", len(o.Dsn), o.MaxIdle, o.MaxOpen, o.Mapper)
+// 赋默认值.
+func (o *Configuration) defaults() {
+    // 1. 映射模式.
+    if o.Mapper == nil {
+        o.Mapper = &defaultMapper
+    }
 
-	o.engines.SetConnMaxLifetime(time.Duration(o.MaxLifetime) * time.Second)
-	o.engines.SetMaxIdleConns(o.MaxIdle)
-	o.engines.SetMaxOpenConns(o.MaxOpen)
-	o.engines.SetLogger(plugins.NewXOrm())
-	o.slaveEnable = len(o.Dsn) > 1
+    // 2. 最大空闲.
+    if o.MaxIdle == nil {
+        o.MaxIdle = &defaultMaxIdle
+    }
 
-	if o.Mapper == "same" {
-		o.engines.SetColumnMapper(names.SameMapper{})
-	} else if o.Mapper == "snake" {
-		o.engines.SetColumnMapper(names.SnakeMapper{})
-	}
+    // 3. 连接时长.
+    //    连接在池中超过指定时长没有被使用后, 关闭连接.
+    if o.MaxLifetime == nil {
+        o.MaxLifetime = &defaultMaxLifetime
+    }
+
+    // 4. 打开文件.
+    if o.MaxOpen == nil {
+        o.MaxOpen = &defaultMaxOpen
+    }
+
+    // 5. 连接标识.
+    if o.UseSessionId == nil {
+        o.UseSessionId = &defaultUseSessionId
+    }
+}
+
+// 扫描配置.
+// 扫描 db 配置文件(db.yaml).
+func (o *Configuration) scan() {
+    for _, f := range []string{"tmp/db.yaml", "config/db.yaml", "../tmp/db.yaml", "../config/db.yaml"} {
+        // 1. 读取文件.
+        buf, err := os.ReadFile(f)
+
+        // 2. 读取出错.
+        //    文件不存在或无读取权限.
+        if err != nil {
+            continue
+        }
+
+        // 3. 格式匹配.
+        //    任意一次解析正确后, 退出执行.
+        if yaml.Unmarshal(buf, o) == nil {
+            break
+        }
+    }
 }
