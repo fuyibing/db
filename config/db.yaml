@@ -28,7 +28,6 @@ databases:
     driver: "mysql"
     dsn:
       - "root:pass@tcp(127.0.0.1:3306)/mysql?charset=utf8"
-      - "root:pass@tcp(127.0.0.1:3306)/mysql?charset=utf8"
 max-idle: 2
 max-open: 32
 max-lifetime: 60
