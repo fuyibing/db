@@ -25,7 +25,6 @@ databases:
 > 设置实例
 
 ```text
-// 设置实例.
 db.Config.SetDatabase("key", &db.Database{
     Driver: "mysql",
     Dsn: []string{
