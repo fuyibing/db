@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/fuyibing/log/v2"
+
 	"github.com/fuyibing/log/v2/interfaces"
 	"github.com/kataras/iris/v12"
 	"xorm.io/xorm"
@@ -87,7 +87,7 @@ func TransactionWithSession(ctx interface{}, sess *xorm.Session, handlers ...Tra
 		// 3.1 Catch panic.
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprintf("%v", r))
-			log.Errorfc(ctx, "[SQL] transaction panic: %s.", err.Error())
+			log.Panicfc(ctx, "[SQL] transaction panic: %s.", err.Error())
 		}
 		// 3.2 End transaction.
 		if err != nil {
