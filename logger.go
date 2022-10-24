@@ -9,8 +9,13 @@ import (
 	xlog "xorm.io/xorm/log"
 )
 
-var Logger *logger
+var (
+	// Logger
+	// 日志.
+	Logger *logger
+)
 
+// 日志结构体.
 type logger struct {
 	xlog.DiscardLogger
 }

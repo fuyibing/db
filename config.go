@@ -11,7 +11,7 @@ import (
 
 var (
 	// Config
-	// 项目配置.
+	// 配置.
 	Config *config
 
 	// 启用链路.
@@ -29,7 +29,7 @@ var (
 
 const (
 	DefaultDriver      = "mysql"
-	DefaultEmptyDsn    = "root:pass@tcp(127.0.0.1:3306)/mysql?charset=utf8"
+	DefaultEmptyDsn    = "username:password@tcp(127.0.0.1:3306)/mysql?charset=utf8"
 	DefaultEngineName  = "db"
 	DefaultMaxIdle     = 2
 	DefaultMaxLifetime = 60
@@ -38,8 +38,11 @@ const (
 
 // 基础配置.
 type config struct {
-	Databases     map[string]*Database `yaml:"databases"`
-	EnableSession *bool                `yaml:"enable-session"`
+	// 连接参数.
+	Databases map[string]*Database `yaml:"databases"`
+
+	// 链路状态.
+	EnableSession *bool `yaml:"enable-session"`
 }
 
 // 赋默认值.
@@ -76,7 +79,6 @@ func (o *config) defaults() *config {
 		if v.ShowSQL == nil {
 			v.ShowSQL = &defaultShowSQL
 		}
-
 		log.Debugf("database found: driver=%s, name=%s, dsn-item=%d", v.Driver, k, len(v.Dsn))
 	}
 
@@ -96,10 +98,7 @@ func (o *config) init() *config {
 
 // 扫描配置.
 func (o *config) scan() *config {
-	for _, f := range []string{
-		"./tmp/db.yaml", "./config/db.yaml",
-		"../tmp/db.yaml", "../config/db.yaml",
-	} {
+	for _, f := range []string{"./tmp/db.yaml", "./config/db.yaml", "../tmp/db.yaml", "../config/db.yaml"} {
 		if body, err := os.ReadFile(f); err == nil {
 			if yaml.Unmarshal(body, o) == nil {
 				log.Debugf("database load: %v", f)

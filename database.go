@@ -6,13 +6,24 @@ package db
 // Database
 // 数据库配置.
 type Database struct {
-	Driver string   `yaml:"driver"`
-	Dsn    []string `yaml:"dsn"`
+	// 驱动名.
+	Driver string `yaml:"driver"`
 
-	MaxIdle     int `yaml:"max-idle"`
+	// 数据源.
+	Dsn []string `yaml:"dsn"`
+
+	// 最大空闲.
+	MaxIdle int `yaml:"max-idle"`
+
+	// 生命周期.
 	MaxLifetime int `yaml:"max-lifetime"`
-	MaxOpen     int `yaml:"max-open"`
 
-	ShowSQL *bool  `yaml:"show-sql"`
-	Mapper  string `yaml:"mapper"`
+	// 最大打开文件.
+	MaxOpen int `yaml:"max-open"`
+
+	// 显示SQL.
+	ShowSQL *bool `yaml:"show-sql"`
+
+	// 映射关系.
+	Mapper string `yaml:"mapper"`
 }
