@@ -1,108 +1,111 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2022-06-06
+// date: 2022-10-24
 
 package db
 
 import (
-    "os"
-    "sync"
-
-    "gopkg.in/yaml.v3"
+	"github.com/fuyibing/log/v3"
+	"gopkg.in/yaml.v3"
+	"os"
 )
 
-// Config
-// 配置实例/单例.
-var Config *Configuration
+var (
+	// Config
+	// 项目配置.
+	Config *config
 
-// Configuration
-// 配置结构体.
-type Configuration struct {
-    Databases    map[string]*Database `yaml:"databases"`
-    Mapper       *string              `yaml:"mapper"`
-    MaxIdle      *int                 `yaml:"max-idle"`
-    MaxLifetime  *int                 `yaml:"max-lifetime"`
-    MaxOpen      *int                 `yaml:"max-open"`
-    UseSessionId *bool                `yaml:"use-session-id"`
+	// 启用链路.
+	//
+	// 当启用时, 在SQL执行的日志中, 打印SessionID, 同一个事务
+	// 保持相同的SessionID.
+	defaultEnableSession = true
 
-    mu *sync.RWMutex
-}
+	// 映射关系.
+	defaultMapper = "snake"
 
-// GetDatabase
-// 读取Database实例.
-func (o *Configuration) GetDatabase(key string) *Database {
-    o.mu.RLock()
-    defer o.mu.RUnlock()
-    if v, ok := o.Databases[key]; ok {
-        return v
-    }
-    return nil
-}
+	// 输出SQL.
+	defaultShowSQL = true
+)
 
-// Init
-// 配置初始化.
-func (o *Configuration) Init() *Configuration {
-    o.mu = new(sync.RWMutex)
-    o.Databases = make(map[string]*Database)
+const (
+	DefaultDriver      = "mysql"
+	DefaultEmptyDsn    = "root:pass@tcp(127.0.0.1:3306)/mysql?charset=utf8"
+	DefaultEngineName  = "db"
+	DefaultMaxIdle     = 2
+	DefaultMaxLifetime = 60
+	DefaultMaxOpen     = 30
+)
 
-    o.scan()
-    o.defaults()
-    return o
-}
-
-// SetDatabase
-// 设置Database实例.
-func (o *Configuration) SetDatabase(key string, database *Database) {
-    o.mu.Lock()
-    defer o.mu.Unlock()
-    o.Databases[key] = database
+// 基础配置.
+type config struct {
+	Databases     map[string]*Database `yaml:"databases"`
+	EnableSession *bool                `yaml:"enable-session"`
 }
 
 // 赋默认值.
-func (o *Configuration) defaults() {
-    // 1. 映射模式.
-    if o.Mapper == nil {
-        o.Mapper = &defaultMapper
-    }
+func (o *config) defaults() *config {
+	// 1. 连结配置.
+	//    支持多连接.
+	if o.Databases == nil {
+		o.Databases = make(map[string]*Database)
+	}
 
-    // 2. 最大空闲.
-    if o.MaxIdle == nil {
-        o.MaxIdle = &defaultMaxIdle
-    }
+	// 1.1 默认参数.
+	for k, v := range o.Databases {
+		// 驱动名.
+		if v.Driver == "" {
+			v.Driver = DefaultDriver
+		}
+		// 最大空闲.
+		if v.MaxIdle == 0 {
+			v.MaxIdle = DefaultMaxIdle
+		}
+		// 最大活跃期.
+		if v.MaxLifetime == 0 {
+			v.MaxLifetime = DefaultMaxLifetime
+		}
+		// 最大连接数.
+		if v.MaxOpen == 0 {
+			v.MaxOpen = DefaultMaxOpen
+		}
+		// 映射配置.
+		if v.Mapper == "" {
+			v.Mapper = defaultMapper
+		}
 
-    // 3. 连接时长.
-    //    连接在池中超过指定时长没有被使用后, 关闭连接.
-    if o.MaxLifetime == nil {
-        o.MaxLifetime = &defaultMaxLifetime
-    }
+		if v.ShowSQL == nil {
+			v.ShowSQL = &defaultShowSQL
+		}
 
-    // 4. 打开文件.
-    if o.MaxOpen == nil {
-        o.MaxOpen = &defaultMaxOpen
-    }
+		log.Debugf("database found: driver=%s, name=%s, dsn-item=%d", v.Driver, k, len(v.Dsn))
+	}
 
-    // 5. 连接标识.
-    if o.UseSessionId == nil {
-        o.UseSessionId = &defaultUseSessionId
-    }
+	// 2. Sess 链路.
+	if o.EnableSession == nil {
+		o.EnableSession = &defaultEnableSession
+	}
+
+	return o
+}
+
+// 构造实例.
+func (o *config) init() *config {
+	log.Debug("database init")
+	return o.scan().defaults()
 }
 
 // 扫描配置.
-// 扫描 db 配置文件(db.yaml).
-func (o *Configuration) scan() {
-    for _, f := range []string{"tmp/db.yaml", "config/db.yaml", "../tmp/db.yaml", "../config/db.yaml"} {
-        // 1. 读取文件.
-        buf, err := os.ReadFile(f)
-
-        // 2. 读取出错.
-        //    文件不存在或无读取权限.
-        if err != nil {
-            continue
-        }
-
-        // 3. 格式匹配.
-        //    任意一次解析正确后, 退出执行.
-        if yaml.Unmarshal(buf, o) == nil {
-            break
-        }
-    }
+func (o *config) scan() *config {
+	for _, f := range []string{
+		"./tmp/db.yaml", "./config/db.yaml",
+		"../tmp/db.yaml", "../config/db.yaml",
+	} {
+		if body, err := os.ReadFile(f); err == nil {
+			if yaml.Unmarshal(body, o) == nil {
+				log.Debugf("database load: %v", f)
+				break
+			}
+		}
+	}
+	return o
 }
