@@ -1,2 +1,12 @@
+# directories
 
-bak/
+.bak
+.directory
+.idea
+.vscode
+.DS_STORE
+
+
+# files
+go.sum
+
