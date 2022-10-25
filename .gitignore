@@ -1,7 +1,2 @@
-# ignore directories
-.idea
-bak/
 
-# ignore files
-*.bak
-go.sum
+bak/

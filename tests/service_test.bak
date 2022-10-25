@@ -28,6 +28,7 @@ func (o *Example) TableName() string {
 func NewExampleService(x ...*xorm.Session) *ExampleService {
 	o := &ExampleService{}
 	o.Use(x...)
+	o.UseConnection("user")
 	return o
 }
 
@@ -44,7 +45,7 @@ func TestService(t *testing.T) {
 	ctx := trace.New()
 	log.Infofc(ctx, "create context")
 
-	sess := db.Connector.GetSlaveWithContext(ctx)
+	sess := db.Connector.GetMasterWithContext(ctx, "dbx")
 	service := NewExampleService(sess)
 
 	g, err := service.GetById(1)

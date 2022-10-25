@@ -6,57 +6,49 @@ package db
 import (
 	"fmt"
 	"github.com/fuyibing/log/v3"
-	xlog "xorm.io/xorm/log"
+	xo "xorm.io/xorm/log"
 )
 
-var (
-	// Logger
-	// 日志.
-	Logger *logger
-)
-
-// 日志结构体.
+// 日志操作.
 type logger struct {
-	xlog.DiscardLogger
+	xo.DiscardLogger
+
+	key, data, user string
+	undefined       bool
 }
 
 // AfterSQL
-// 后置日志.
-//
-// 执行 SQL 完成后, 记录其结果.
-func (o *logger) AfterSQL(c xlog.LogContext) {
-	sid := "[SQL]"
+// SQL执行完成后触发.
+func (o *logger) AfterSQL(c xo.LogContext) {
+	var (
+		prefix = fmt.Sprintf("[SQL=%d]", c.ExecuteTime.Milliseconds())
+	)
 
-	// 1. 打印链路.
-	if *Config.EnableSession {
-		if s := c.Ctx.Value(xlog.SessionIDKey); s != nil {
-			sid = fmt.Sprintf("[SQL=%v]", s)
-		}
+	// 1. ORM参数.
+	if s := c.Ctx.Value(xo.SessionIDKey); s != nil {
+		prefix += fmt.Sprintf("[XORM=%s|%s|%s|%s]", o.key, o.user, o.data, s)
+	} else {
+		prefix += fmt.Sprintf("[XORM=%s|%s|%s]", o.key, o.user, o.data)
 	}
 
-	// 2. 构建语句.
+	// 2. 查询语句.
 	if c.Args != nil && len(c.Args) > 0 {
-		log.Client.Infofc(c.Ctx, fmt.Sprintf("%v[d=%.06f] %s, Params: %v",
-			sid, c.ExecuteTime.Seconds(), c.SQL, c.Args,
-		))
+		log.Client.Infofc(c.Ctx, "%s %s, Args: %v", prefix, c.SQL, c.Args)
 	} else {
-		log.Client.Infofc(c.Ctx, fmt.Sprintf("%v[d=%.06f] %s",
-			sid, c.ExecuteTime.Seconds(), c.SQL,
-		))
+		log.Client.Infofc(c.Ctx, "%s %s", prefix, c.SQL)
 	}
 
 	// 2. 记录Err原因.
-	if c.Err != nil {
-		log.Client.Errorfc(c.Ctx, fmt.Sprintf("%v%v", sid, c.Err))
+	if o.undefined {
+		log.Client.Errorfc(c.Ctx, "field '%s' not defined in config file: %v", o.key, c.Err)
+	} else if c.Err != nil {
+		log.Client.Errorfc(c.Ctx, fmt.Sprintf("%v", c.Err))
 	}
 }
 
-// BeforeSQL
-// 前置日志.
-func (o *logger) BeforeSQL(_ xlog.LogContext) {}
-
-func (o *logger) Level() xlog.LogLevel     { return xlog.LOG_INFO }
-func (o *logger) SetLevel(_ xlog.LogLevel) {}
-func (o *logger) IsShowSQL() bool          { return true }
+func (o *logger) BeforeSQL(_ xo.LogContext) {}
+func (o *logger) Level() xo.LogLevel        { return xo.LOG_INFO }
+func (o *logger) SetLevel(_ xo.LogLevel)    {}
+func (o *logger) IsShowSQL() bool           { return true }
 
 func (o *logger) init() *logger { return o }

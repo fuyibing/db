@@ -27,8 +27,8 @@ databases:
   db:
     driver: "mysql"
     dsn:
-      - "root:pass@tcp(127.0.0.1:3306)/gmbs?charset=utf8"
-max-idle: 2
-max-open: 32
-max-lifetime: 60
-mapper: "snake"
+      - "root:pass@tcp(127.0.0.1:3306)/schema?charset=utf8"
+    max-idle: 2
+    max-open: 32
+    max-lifetime: 60
+    mapper: "snake"

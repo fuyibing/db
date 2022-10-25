@@ -1,5 +1,5 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2022-10-23
+// date: 2022-10-24
 
 package db
 
@@ -8,49 +8,40 @@ import (
 )
 
 // Service
-// ORM数据服务.
-//
-//   type ExampleService struct {
-//       Service
-//   }
+// 服务操作.
 type Service struct {
-	// 连接名称.
-	// 系统基于此名称, 加载连接选项.
-	_name string
-
-	// 连接实例.
-	// 从连接池中获取活跃连接.
-	_sess *xorm.Session
+	connection string        // 连接名称(默认: db)
+	session    *xorm.Session // 自定义连接
 }
 
 // Master
 // 读取主库连接.
 func (o *Service) Master() *xorm.Session {
-	if o._sess != nil {
-		return o._sess
+	if o.session != nil {
+		return o.session
 	}
-	return Connector.GetMaster(o._name)
+	return Connector.GetMaster(o.connection)
 }
 
 // Slave
 // 读取从库连接.
 func (o *Service) Slave() *xorm.Session {
-	if o._sess != nil {
-		return o._sess
+	if o.session != nil {
+		return o.session
 	}
-	return Connector.GetSlave(o._name)
+	return Connector.GetSlave(o.connection)
 }
 
 // Use
-// 使用指定连接.
-func (o *Service) Use(s ...*xorm.Session) {
-	if len(s) > 0 {
-		o._sess = s[0]
+// 绑定连接.
+func (o *Service) Use(sessions ...*xorm.Session) {
+	if len(sessions) > 0 {
+		o.session = sessions[0]
 	}
 }
 
 // UseConnection
-// 使用连接名称.
-func (o *Service) UseConnection(name string) {
-	o._name = name
+// 绑定连接名称.
+func (o *Service) UseConnection(connection string) {
+	o.connection = connection
 }
