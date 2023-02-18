@@ -1,20 +1,11 @@
 # DB
 
-> 基于 `xorm` 构建的 `DB` 工具.
+> XORM Plugin
 
-### 导入包
-
-```
-import (
-    "github.com/fuyibing/db/v3"
-)
-```
-
-### 依赖项
+### Import
 
 ```
 import (
-    "github.com/fuyibing/log/v3
-    "xorm.io/xorm"
+    "github.com/fuyibing/db/v8"
 )
 ```
