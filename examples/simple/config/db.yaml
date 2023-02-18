@@ -1,5 +1,5 @@
 #
-# package: github.com/fuyibing/db/v3.
+# package: github.com/fuyibing/db/v8.
 # path: config/db.yaml
 #
 # databases:
@@ -30,4 +30,4 @@
 databases:
   db:
     dsn:
-      - "root:pass@tcp(127.0.0.1:3306)/schema?charset=utf8"
+      - "root:pass@tcp(127.0.0.1:3306)/mbs?charset=utf8"

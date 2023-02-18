@@ -1,37 +1,26 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2022-10-24
+// date: 2023-02-18
 
 package db
 
 import (
-	"github.com/fuyibing/log/v3"
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v3"
 	"os"
 	"sync"
 )
 
-var (
-	// Config
-	// 配置实例.
-	Config *Configuration
-)
+var Config *Configuration
 
 type (
-	// Configuration
-	// 配置结构体.
 	Configuration struct {
-		// 数据源列表.
-		// 包初始化时, 从 config/db.yaml 文件中解析.
 		Databases map[string]*Database `yaml:"databases"`
 
-		database *Database    // 默认数据源
-		mu       sync.RWMutex // 读写锁
+		database *Database
+		mu       sync.RWMutex
 	}
 )
 
-// GetDatabase
-// 读取数据源.
 func (o *Configuration) GetDatabase(key string) *Database {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -41,14 +30,8 @@ func (o *Configuration) GetDatabase(key string) *Database {
 	return nil
 }
 
-// GetDefault
-// 读取数据源.
-func (o *Configuration) GetDefault() *Database {
-	return o.database
-}
+func (o *Configuration) GetDefault() *Database { return o.database }
 
-// SetDatabase
-// 设置数据源.
 func (o *Configuration) SetDatabase(key string, database *Database) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -59,7 +42,10 @@ func (o *Configuration) SetDatabase(key string, database *Database) {
 	}
 }
 
-// 默认配置.
+// /////////////////////////////////////////////////////////////
+// Access methods
+// /////////////////////////////////////////////////////////////
+
 func (o *Configuration) defaults() {
 	if o.Databases == nil {
 		o.Databases = make(map[string]*Database)
@@ -69,24 +55,19 @@ func (o *Configuration) defaults() {
 	}
 }
 
-// 构造实例.
 func (o *Configuration) init() *Configuration {
-	log.Debug("database init")
-
+	o.mu = sync.RWMutex{}
 	o.scan()
 	o.defaults()
 
 	o.database = (&Database{Dsn: []string{defaultEngineDsn}, undefined: true}).init()
-	o.mu = sync.RWMutex{}
 	return o
 }
 
-// 扫描配置.
 func (o *Configuration) scan() {
 	for _, f := range []string{"./tmp/db.yaml", "./config/db.yaml", "../tmp/db.yaml", "../config/db.yaml"} {
 		if body, err := os.ReadFile(f); err == nil {
 			if yaml.Unmarshal(body, o) == nil {
-				log.Debugf("database load: %v", f)
 				break
 			}
 		}

@@ -1,5 +1,5 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2022-10-24
+// date: 2023-02-18
 
 package db
 
@@ -27,8 +27,6 @@ const (
 	defaultMapperName = "snake"
 )
 
-// Database
-// 数据库配置.
 type Database struct {
 	Driver        string   `yaml:"driver"`
 	Dsn           []string `yaml:"dsn"`
@@ -45,34 +43,12 @@ type Database struct {
 	user      string
 }
 
-// GetMapper
-// 返回映射关系.
-func (o *Database) GetMapper() names.Mapper {
-	return o.mapper
-}
+func (o *Database) GetMapper() names.Mapper { return o.mapper }
+func (o *Database) GetDataName() string     { return o.data }
+func (o *Database) GetUsername() string     { return o.user }
+func (o *Database) Undefined() bool         { return o.undefined }
 
-// GetDataName
-// 返回数据库库名.
-func (o *Database) GetDataName() string {
-	return o.data
-}
-
-// GetUsername
-// 返回数据库用户名.
-func (o *Database) GetUsername() string {
-	return o.user
-}
-
-// Undefined
-// 是否未定义.
-func (o *Database) Undefined() bool {
-	return o.undefined
-}
-
-// 初始化.
 func (o *Database) init() *Database {
-	// 基础项.
-
 	if o.Driver == "" {
 		o.Driver = defaultDriver
 	}
@@ -82,8 +58,6 @@ func (o *Database) init() *Database {
 	if o.Dsn == nil {
 		o.Dsn = make([]string, 0)
 	}
-
-	// 连接池
 
 	if o.MaxIdle == 0 {
 		o.MaxIdle = defaultMaxIdle
@@ -95,8 +69,6 @@ func (o *Database) init() *Database {
 		o.MaxLifetime = defaultMaxLifetime
 	}
 
-	// 附加项.
-
 	if o.ShowSQL == nil {
 		o.ShowSQL = &defaultShowSQL
 	}
@@ -104,16 +76,12 @@ func (o *Database) init() *Database {
 		o.EnableSession = &defaultEnableSession
 	}
 
-	// 数据库.
-
 	for _, s := range o.Dsn {
 		if m := regexp.MustCompile(`^([_a-zA-Z0-9\-]+):([^/]+)/([_a-zA-Z0-9\-]+)`).FindStringSubmatch(s); len(m) > 0 {
 			o.data = m[3]
 			o.user = m[1]
 		}
 	}
-
-	// 映射关系.
 
 	switch strings.ToLower(o.Mapper) {
 	case "gonic":

@@ -1,8 +1,8 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2022-06-06
+// date: 2023-02-18
 
 // Package db
-// 基于 XORM 的数据库操作工具.
+// database plugin based on xorm.
 package db
 
 import (

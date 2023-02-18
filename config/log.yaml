@@ -1,5 +1,0 @@
-level: "DEBUG"
-adapter:
-  - term
-term:
-  color: true

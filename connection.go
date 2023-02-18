@@ -1,5 +1,5 @@
 // author: wsfuyibing <websearch@163.com>
-// date: 2022-10-24
+// date: 2023-02-18
 
 package db
 
@@ -10,21 +10,15 @@ import (
 	"xorm.io/xorm"
 )
 
-var (
-	Connector *Connection
-)
+var Connector *Connection
 
 type (
-	// Connection
-	// 连接操作.
 	Connection struct {
 		engines map[string]*xorm.EngineGroup
 		mu      sync.RWMutex
 	}
 )
 
-// GetEngineGroup
-// 读取ORM引擎.
 func (o *Connection) GetEngineGroup(keys ...string) (engine *xorm.EngineGroup) {
 	var (
 		key = o.key(keys...)
@@ -42,37 +36,32 @@ func (o *Connection) GetEngineGroup(keys ...string) (engine *xorm.EngineGroup) {
 	return
 }
 
-// GetMaster
-// 读取主库连接.
 func (o *Connection) GetMaster(keys ...string) *xorm.Session {
 	engine := o.GetEngineGroup(keys...)
 	return engine.Master().NewSession()
 }
 
-// GetMasterWithContext
-// 读取主库连接.
 func (o *Connection) GetMasterWithContext(ctx context.Context, keys ...string) *xorm.Session {
 	sess := o.GetMaster(keys...)
 	sess.Context(ctx)
 	return sess
 }
 
-// GetSlave
-// 读取从库连接.
 func (o *Connection) GetSlave(keys ...string) *xorm.Session {
 	engine := o.GetEngineGroup(keys...)
 	return engine.Slave().NewSession()
 }
 
-// GetSlaveWithContext
-// 读取从库连接.
 func (o *Connection) GetSlaveWithContext(ctx context.Context, keys ...string) *xorm.Session {
 	sess := o.GetSlave(keys...)
 	sess.Context(ctx)
 	return sess
 }
 
-// 构建引擎.
+// /////////////////////////////////////////////////////////////
+// Access methods
+// /////////////////////////////////////////////////////////////
+
 func (o *Connection) build(key string) *xorm.EngineGroup {
 	var (
 		cfg = Config.GetDatabase(key)
@@ -101,14 +90,12 @@ func (o *Connection) build(key string) *xorm.EngineGroup {
 	return eng
 }
 
-// 构造实例.
 func (o *Connection) init() *Connection {
 	o.engines = make(map[string]*xorm.EngineGroup)
 	o.mu = sync.RWMutex{}
 	return o
 }
 
-// 配置名称.
 func (o *Connection) key(keys ...string) string {
 	if len(keys) > 0 && keys[0] != "" {
 		return keys[0]
