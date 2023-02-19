@@ -18,7 +18,7 @@ func init() {
 }
 
 func main() {
-	defer log.Client.Stop()
+	defer log.Client.Close()
 
 	bean, err := services.NewExampleService().GetById(1)
 

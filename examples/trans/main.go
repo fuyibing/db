@@ -13,8 +13,7 @@ import (
 	"xorm.io/xorm"
 )
 
-type formatter struct {
-}
+type formatter struct{}
 
 func (o *formatter) Body(_ *base.Line) []byte { return nil }
 func (o *formatter) String(p *base.Line) string {
@@ -28,7 +27,7 @@ func init() {
 		conf.SetTermColor(true),
 	)
 
-	// log.Client.GetAdapterRegistry().SetFormatter(&formatter{})
+	log.Client.GetAdapterRegistry().SetFormatter(&formatter{})
 }
 
 func main() {
@@ -37,7 +36,7 @@ func main() {
 
 	defer func() {
 		log.Infofc(ctx, "-------------- trace end")
-		log.Client.Stop()
+		log.Client.Close()
 	}()
 
 	_ = db.TransactionWithSession(ctx, sess, tx1, tx2)

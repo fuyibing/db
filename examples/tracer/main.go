@@ -24,7 +24,7 @@ func main() {
 
 	defer func() {
 		log.Infofc(ctx, "trace end")
-		log.Client.Stop()
+		log.Client.Close()
 	}()
 
 	bean, err := services.NewExampleService(sess).GetById(1)
