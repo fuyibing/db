@@ -24,12 +24,12 @@ func (o *logger) AfterSQL(c xo.LogContext) {
 	// Append query statement.
 	if exists {
 		span.InfoWith(map[string]interface{}{
-			"sql-args":     c.Args,
-			"sql-duration": c.ExecuteTime.Milliseconds(),
-			"sql-session":  c.Ctx.Value(xo.SessionIDKey),
-			"sql-config":   o.key,
-			"sql-username": o.user,
-			"sql-database": o.data,
+			"sql-args":        c.Args,
+			"sql-collector":   o.key,
+			"sql-database":    o.data,
+			"sql-duration-ms": c.ExecuteTime.Milliseconds(),
+			"sql-session":     c.Ctx.Value(xo.SessionIDKey),
+			"sql-username":    o.user,
 		}, c.SQL)
 	} else {
 		log.Info("[SQL] %s, Args: %v", c.SQL, c.Args)
