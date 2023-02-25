@@ -5,8 +5,9 @@ package db
 
 import (
 	"fmt"
-	"github.com/fuyibing/log/v8"
 	xo "xorm.io/xorm/log"
+
+	"github.com/fuyibing/log/v5"
 )
 
 type logger struct {
@@ -17,6 +18,10 @@ type logger struct {
 }
 
 func (o *logger) AfterSQL(c xo.LogContext) {
+	var (
+		span, exists = log.Manager.GetSpan(c.Ctx)
+	)
+
 	prefix := fmt.Sprintf("[SQL=%d]", c.ExecuteTime.Milliseconds())
 
 	// Append xorm session
@@ -29,15 +34,31 @@ func (o *logger) AfterSQL(c xo.LogContext) {
 
 	// Append query statement.
 	if c.Args != nil && len(c.Args) > 0 {
-		log.Infofc(c.Ctx, "%s %s, Args: %v", prefix, c.SQL, c.Args)
+		if exists {
+			span.Info("%s %s, Args: %v", prefix, c.SQL, c.Args)
+		} else {
+			log.Info("%s %s, Args: %v", prefix, c.SQL, c.Args)
+		}
 	} else {
-		log.Infofc(c.Ctx, "%s %s", prefix, c.SQL)
+		if exists {
+			span.Info("%s %s", prefix, c.SQL)
+		} else {
+			log.Info("%s %s", prefix, c.SQL)
+		}
 	}
 
 	if o.undefined {
-		log.Errorfc(c.Ctx, "field '%s' not defined in config file: %v", o.key, c.Err)
+		if exists {
+			span.Error("field '%s' not defined in config file: %v", o.key, c.Err)
+		} else {
+			log.Error("field '%s' not defined in config file: %v", o.key, c.Err)
+		}
 	} else if c.Err != nil {
-		log.Errorfc(c.Ctx, fmt.Sprintf("%v", c.Err))
+		if exists {
+			span.Error(fmt.Sprintf("%v", c.Err))
+		} else {
+			log.Error(fmt.Sprintf("%v", c.Err))
+		}
 	}
 }
 

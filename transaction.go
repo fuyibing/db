@@ -6,8 +6,9 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/fuyibing/log/v8"
 	"xorm.io/xorm"
+
+	"github.com/fuyibing/log/v5"
 )
 
 type TransactionHandler func(ctx context.Context, sess *xorm.Session) error
@@ -27,7 +28,11 @@ func TransactionWithSession(ctx context.Context, sess *xorm.Session, handlers ..
 	// Transaction result detect.
 	defer func() {
 		if r := recover(); r != nil {
-			log.Fatalfc(ctx, "panic on database transaction: %v", r)
+			if span, exists := log.Manager.GetSpan(ctx); exists {
+				span.Fatal("panic on database transaction: %v", r)
+			} else {
+				log.Fatal("panic on database transaction: %v", r)
+			}
 
 			if err == nil {
 				err = fmt.Errorf("%v", err)
