@@ -1,4 +1,4 @@
-module github.com/fuyibing/db/v8
+module github.com/fuyibing/db/v5
 
 go 1.13
 
