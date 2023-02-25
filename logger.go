@@ -4,7 +4,6 @@
 package db
 
 import (
-	"fmt"
 	xo "xorm.io/xorm/log"
 
 	"github.com/fuyibing/log/v5"
@@ -22,29 +21,18 @@ func (o *logger) AfterSQL(c xo.LogContext) {
 		span, exists = log.Manager.GetSpan(c.Ctx)
 	)
 
-	prefix := fmt.Sprintf("[SQL=%d]", c.ExecuteTime.Milliseconds())
-
-	// Append xorm session
-	// on log.
-	if s := c.Ctx.Value(xo.SessionIDKey); s != nil {
-		prefix += fmt.Sprintf("[XORM=%s|%s|%s|%s]", o.key, o.user, o.data, s)
-	} else {
-		prefix += fmt.Sprintf("[XORM=%s|%s|%s]", o.key, o.user, o.data)
-	}
-
 	// Append query statement.
-	if c.Args != nil && len(c.Args) > 0 {
-		if exists {
-			span.Info("%s %s, Args: %v", prefix, c.SQL, c.Args)
-		} else {
-			log.Info("%s %s, Args: %v", prefix, c.SQL, c.Args)
-		}
+	if exists {
+		span.InfoWith(map[string]interface{}{
+			"sql-args":     c.Args,
+			"sql-duration": c.ExecuteTime.Milliseconds(),
+			"sql-session":  c.Ctx.Value(xo.SessionIDKey),
+			"sql-config":   o.key,
+			"sql-username": o.user,
+			"sql-database": o.data,
+		}, c.SQL)
 	} else {
-		if exists {
-			span.Info("%s %s", prefix, c.SQL)
-		} else {
-			log.Info("%s %s", prefix, c.SQL)
-		}
+		log.Info("[SQL] %s, Args: %v", c.SQL, c.Args)
 	}
 
 	if o.undefined {
@@ -55,9 +43,9 @@ func (o *logger) AfterSQL(c xo.LogContext) {
 		}
 	} else if c.Err != nil {
 		if exists {
-			span.Error(fmt.Sprintf("%v", c.Err))
+			span.Error("%v", c.Err)
 		} else {
-			log.Error(fmt.Sprintf("%v", c.Err))
+			log.Error("%v", c.Err)
 		}
 	}
 }
