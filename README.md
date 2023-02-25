@@ -6,6 +6,6 @@
 
 ```
 import (
-    "github.com/fuyibing/db/v8"
+    "github.com/fuyibing/db/v5"
 )
 ```
