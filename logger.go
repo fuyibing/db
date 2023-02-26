@@ -18,32 +18,32 @@ type logger struct {
 
 func (o *logger) AfterSQL(c xo.LogContext) {
 	var (
-		span, exists = log.Manager.GetSpan(c.Ctx)
+		spa, exists = log.Span(c.Ctx)
 	)
 
 	// Append query statement.
 	if exists {
-		span.InfoWith(map[string]interface{}{
-			"sql-args":        c.Args,
-			"sql-collector":   o.key,
-			"sql-database":    o.data,
-			"sql-duration-ms": c.ExecuteTime.Milliseconds(),
-			"sql-session":     c.Ctx.Value(xo.SessionIDKey),
-			"sql-username":    o.user,
-		}, c.SQL)
+		spa.Logger().
+			Add("sql-args", c.Args).
+			Add("sql-collector", o.key).
+			Add("sql-database", o.data).
+			Add("sql-duration-ms", c.ExecuteTime.Milliseconds()).
+			Add("sql-session", c.Ctx.Value(xo.SessionIDKey)).
+			Add("sql-username", o.user).
+			Info(c.SQL)
 	} else {
 		log.Info("[SQL] %s, Args: %v", c.SQL, c.Args)
 	}
 
 	if o.undefined {
 		if exists {
-			span.Error("field '%s' not defined in config file: %v", o.key, c.Err)
+			spa.Logger().Error("field '%s' not defined in config file: %v", o.key, c.Err)
 		} else {
 			log.Error("field '%s' not defined in config file: %v", o.key, c.Err)
 		}
 	} else if c.Err != nil {
 		if exists {
-			span.Error("%v", c.Err)
+			spa.Logger().Error("%v", c.Err)
 		} else {
 			log.Error("%v", c.Err)
 		}

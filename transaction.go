@@ -28,8 +28,8 @@ func TransactionWithSession(ctx context.Context, sess *xorm.Session, handlers ..
 	// Transaction result detect.
 	defer func() {
 		if r := recover(); r != nil {
-			if span, exists := log.Manager.GetSpan(ctx); exists {
-				span.Fatal("panic on database transaction: %v", r)
+			if span, exists := log.Span(ctx); exists {
+				span.Logger().Fatal("panic on database transaction: %v", r)
 			} else {
 				log.Fatal("panic on database transaction: %v", r)
 			}
