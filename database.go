@@ -11,7 +11,7 @@ import (
 
 var (
 	defaultEnableSession = true
-	defaultRegexDsn      = regexp.MustCompile(`^([_a-zA-Z0-9]+):[.]*@tcp\([^)]+\)/([^?]+)`)
+	defaultRegexDsn      = regexp.MustCompile(`^([_a-zA-Z0-9-]+):(.+)@tcp\(([^)]+)\)/([^?]*)`)
 	defaultShowSQL       = true
 )
 
@@ -102,8 +102,8 @@ func (o *Database) init() *Database {
 	for _, s := range o.Dsn {
 		if m := defaultRegexDsn.FindStringSubmatch(s); len(m) == 4 {
 			o.user = m[1]
-			o.host = m[2]
-			o.data = m[3]
+			o.host = m[3]
+			o.data = m[4]
 			break
 		}
 	}
