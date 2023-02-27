@@ -11,6 +11,7 @@ import (
 
 var (
 	defaultEnableSession = true
+	defaultRegexDsn      = regexp.MustCompile(`^([_a-zA-Z0-9]+):[.]*@tcp\([^)]+\)/([^?]+)`)
 	defaultShowSQL       = true
 )
 
@@ -27,27 +28,47 @@ const (
 	defaultMapperName = "snake"
 )
 
-type Database struct {
-	Driver        string   `yaml:"driver"`
-	Dsn           []string `yaml:"dsn"`
-	MaxIdle       int      `yaml:"max-idle"`
-	MaxLifetime   int      `yaml:"max-lifetime"`
-	MaxOpen       int      `yaml:"max-open"`
-	Mapper        string   `yaml:"mapper"`
-	EnableSession *bool    `yaml:"enable-session"`
-	ShowSQL       *bool    `yaml:"show-sql"`
+type (
+	// Database
+	// 数据源定义.
+	Database struct {
+		Driver        string   `yaml:"driver"`
+		Dsn           []string `yaml:"dsn"`
+		EnableSession *bool    `yaml:"enable-session"`
+		MaxIdle       int      `yaml:"max-idle"`
+		MaxLifetime   int      `yaml:"max-lifetime"`
+		MaxOpen       int      `yaml:"max-open"`
+		Mapper        string   `yaml:"mapper"`
+		ShowSQL       *bool    `yaml:"show-sql"`
 
-	data      string
-	mapper    names.Mapper
-	undefined bool
-	user      string
-}
+		data, host, user string
+		internal         bool
+		mapper           names.Mapper
+	}
+)
 
+// GetDataName
+// 获取数据库名.
+func (o *Database) GetDataName() string { return o.data }
+
+// GetHost
+// 获取数据源地址.
+func (o *Database) GetHost() string { return o.host }
+
+// GetMapper
+// 获取映射名.
 func (o *Database) GetMapper() names.Mapper { return o.mapper }
-func (o *Database) GetDataName() string     { return o.data }
-func (o *Database) GetUsername() string     { return o.user }
-func (o *Database) Undefined() bool         { return o.undefined }
 
+// GetUsername
+// 获取用户名.
+func (o *Database) GetUsername() string { return o.user }
+
+// Internal
+// 是否内部源.
+func (o *Database) Internal() bool { return o.internal }
+
+// init
+// 构造数据源.
 func (o *Database) init() *Database {
 	if o.Driver == "" {
 		o.Driver = defaultDriver
@@ -76,13 +97,18 @@ func (o *Database) init() *Database {
 		o.EnableSession = &defaultEnableSession
 	}
 
+	// 解析DNS.
+	// 从数据源中获取用户, 地址, 库名.
 	for _, s := range o.Dsn {
-		if m := regexp.MustCompile(`^([_a-zA-Z0-9\-]+):([^/]+)/([_a-zA-Z0-9\-]+)`).FindStringSubmatch(s); len(m) > 0 {
-			o.data = m[3]
+		if m := defaultRegexDsn.FindStringSubmatch(s); len(m) == 4 {
 			o.user = m[1]
+			o.host = m[2]
+			o.data = m[3]
+			break
 		}
 	}
 
+	// 映射关系.
 	switch strings.ToLower(o.Mapper) {
 	case "gonic":
 		o.mapper = names.GonicMapper{}

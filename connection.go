@@ -10,15 +10,23 @@ import (
 	"xorm.io/xorm"
 )
 
-var Connector *Connection
+var (
+	// Connector
+	// 连接管理.
+	Connector *Connection
+)
 
 type (
+	// Connection
+	// 连接管理接口.
 	Connection struct {
 		engines map[string]*xorm.EngineGroup
 		mu      sync.RWMutex
 	}
 )
 
+// GetEngineGroup
+// 读取XORM引擎组.
 func (o *Connection) GetEngineGroup(keys ...string) (engine *xorm.EngineGroup) {
 	var (
 		key = o.key(keys...)
@@ -28,6 +36,7 @@ func (o *Connection) GetEngineGroup(keys ...string) (engine *xorm.EngineGroup) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
+	// 复用连接组配置, 若不存在则创建.
 	if engine, ok = o.engines[key]; !ok {
 		engine = o.build(key)
 		o.engines[key] = engine
@@ -36,31 +45,35 @@ func (o *Connection) GetEngineGroup(keys ...string) (engine *xorm.EngineGroup) {
 	return
 }
 
+// GetMaster
+// 从Master获取Session.
 func (o *Connection) GetMaster(keys ...string) *xorm.Session {
-	engine := o.GetEngineGroup(keys...)
-	return engine.Master().NewSession()
+	return o.GetEngineGroup(keys...).
+		Master().
+		NewSession()
 }
 
+// GetMasterWithContext
+// 基于Context从Master获取Session.
 func (o *Connection) GetMasterWithContext(ctx context.Context, keys ...string) *xorm.Session {
-	sess := o.GetMaster(keys...)
-	sess.Context(ctx)
-	return sess
+	return o.GetMaster(keys...).
+		Context(ctx)
 }
 
+// GetSlave
+// 从Slave获取Session.
 func (o *Connection) GetSlave(keys ...string) *xorm.Session {
-	engine := o.GetEngineGroup(keys...)
-	return engine.Slave().NewSession()
+	return o.GetEngineGroup(keys...).
+		Slave().
+		NewSession()
 }
 
+// GetSlaveWithContext
+// 基于Context从Slave获取Session.
 func (o *Connection) GetSlaveWithContext(ctx context.Context, keys ...string) *xorm.Session {
-	sess := o.GetSlave(keys...)
-	sess.Context(ctx)
-	return sess
+	return o.GetSlave(keys...).
+		Context(ctx)
 }
-
-// /////////////////////////////////////////////////////////////
-// Access methods
-// /////////////////////////////////////////////////////////////
 
 func (o *Connection) build(key string) *xorm.EngineGroup {
 	var (
@@ -69,7 +82,7 @@ func (o *Connection) build(key string) *xorm.EngineGroup {
 	)
 
 	if cfg == nil {
-		cfg = Config.GetDefault()
+		cfg = Config.GetUndefined()
 	}
 
 	eng, _ = xorm.NewEngineGroup(cfg.Driver, cfg.Dsn)
@@ -81,10 +94,11 @@ func (o *Connection) build(key string) *xorm.EngineGroup {
 	eng.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime) * time.Second)
 
 	eng.SetLogger((&logger{
-		data:      cfg.GetDataName(),
-		key:       key,
-		user:      cfg.GetUsername(),
-		undefined: cfg.undefined,
+		data:     cfg.GetDataName(),
+		host:     cfg.GetHost(),
+		key:      key,
+		user:     cfg.GetUsername(),
+		internal: cfg.internal,
 	}).init())
 
 	return eng

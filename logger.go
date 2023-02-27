@@ -9,42 +9,49 @@ import (
 	"github.com/fuyibing/log/v5"
 )
 
-type logger struct {
-	xo.DiscardLogger
+type (
+	// logger
+	// 覆盖XORM日志.
+	logger struct {
+		xo.DiscardLogger
 
-	key, data, user string
-	undefined       bool
-}
+		key, data, host, user string
+		internal              bool
+	}
+)
 
+// AfterSQL
+// 后置事件.
+//
+// 当SQL执行完成后, XORM调用此方法.
 func (o *logger) AfterSQL(c xo.LogContext) {
-	var (
-		spa, exists = log.Span(c.Ctx)
-	)
+	spa, exists := log.Span(c.Ctx)
 
-	// Append query statement.
+	// 追加日志.
 	if exists {
+		// 链路模式.
+		// 基于 `fuyibing/log` 中间件的 OpenTelemetry 规范.
 		spa.Logger().
-			Add("sql-args", c.Args).
-			Add("sql-collector", o.key).
-			Add("sql-database", o.data).
+			Add("sql-cfg", o.key).
+			Add("sql-sess", c.Ctx.Value(xo.SessionIDKey)).
 			Add("sql-duration-ms", c.ExecuteTime.Milliseconds()).
-			Add("sql-session", c.Ctx.Value(xo.SessionIDKey)).
-			Add("sql-username", o.user).
+			Add("sql-arg", c.Args).
+			Add("sql-data", o.data).
+			Add("sql-user", o.user).
+			Add("sql-host", o.host).
 			Info(c.SQL)
 	} else {
+		// 普通日志.
 		log.Info("[SQL] %s, Args: %v", c.SQL, c.Args)
 	}
 
-	if o.undefined {
+	// 执行出错.
+	if c.Err != nil {
 		if exists {
-			spa.Logger().Error("field '%s' not defined in config file: %v", o.key, c.Err)
-		} else {
-			log.Error("field '%s' not defined in config file: %v", o.key, c.Err)
-		}
-	} else if c.Err != nil {
-		if exists {
+			// 链路模式.
 			spa.Logger().Error("%v", c.Err)
 		} else {
+			// 普通模式.
 			log.Error("%v", c.Err)
 		}
 	}
