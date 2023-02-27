@@ -100,7 +100,7 @@ func (o *Database) init() *Database {
 	// 解析DNS.
 	// 从数据源中获取用户, 地址, 库名.
 	for _, s := range o.Dsn {
-		if m := defaultRegexDsn.FindStringSubmatch(s); len(m) == 4 {
+		if m := defaultRegexDsn.FindStringSubmatch(s); len(m) > 1 {
 			o.user = m[1]
 			o.host = m[3]
 			o.data = m[4]
