@@ -49,10 +49,10 @@ func (o *logger) AfterSQL(c xo.LogContext) {
 	if c.Err != nil {
 		if exists {
 			// 链路模式.
-			spa.Logger().Error("%v", c.Err)
+			spa.Logger().Error("[SQL] %v", c.Err)
 		} else {
 			// 普通模式.
-			log.Error("%v", c.Err)
+			log.Error("[SQL] %v", c.Err)
 		}
 	}
 }
